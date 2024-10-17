@@ -3,15 +3,15 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import seaborn as sns
-
-import warnings
-from collections import Counter
-import datetime
 import wordcloud
-import json
+from collections import Counter
+import warnings
+import datetime
 
-
+# Read dataset
 df = pd.read_csv("USvideos.csv")
+
+# Set plot colors and styles for consistency
 PLOT_COLORS = ["#268bd2", "#0052CC", "#FF5722", "#b58900", "#003f5c"]
 pd.options.display.float_format = '{:.2f}'.format
 sns.set(style="ticks")
@@ -25,18 +25,18 @@ plt.rc('font', family='Arial', weight='400', size=10)
 plt.rc('text', color='#282828')
 plt.rc('savefig', pad_inches=0.3, dpi=300)
 
+# Replace NaN descriptions with empty strings
 df["description"] = df["description"].fillna(value="")
 df.describe()
 
+# Function to check if any word in the title is fully capitalized
 def contains_capitalized_word(s):
-    for w in s.split():
-        if w.isupper():
-            return True
-    return False
-
+    # Optimization with generator and any()
+    return any(w.isupper() for w in s.split())
 
 df["contains_capitalized"] = df["title"].apply(contains_capitalized_word)
 
+# Pie chart of capitalized word in titles
 value_counts = df["contains_capitalized"].value_counts().to_dict()
 fig, ax = plt.subplots()
 _ = ax.pie([value_counts[False], value_counts[True]], labels=['No', 'Yes'], 
@@ -44,28 +44,34 @@ _ = ax.pie([value_counts[False], value_counts[True]], labels=['No', 'Yes'],
 _ = ax.axis('equal')
 _ = ax.set_title('Title Contains Capitalized Word?')
 
+# Calculate title lengths
 df["title_length"] = df["title"].apply(lambda x: len(x))
 
+# Histogram for title length
 fig, ax = plt.subplots()
-_ = sns.distplot(df["title_length"], kde=False, rug=False, 
-                 color=PLOT_COLORS[4], hist_kws={'alpha': 1}, ax=ax)
-_ = ax.set(xlabel="Title Length", ylabel="No. of videos", xticks=range(0, 110, 10))
+_ = sns.histplot(df["title_length"], kde=False, color=PLOT_COLORS[4], bins=20, ax=ax)
+_ = ax.set(xlabel="Title Length", ylabel="Number of Videos", xticks=range(0, 110, 10))
 
+# Scatter plot of views vs title length
 fig, ax = plt.subplots()
 _ = ax.scatter(x=df['views'], y=df['title_length'], color=PLOT_COLORS[2], edgecolors="#000000", linewidths=0.5)
 _ = ax.set(xlabel="Views", ylabel="Title Length")
+_ = ax.grid(True)  # Add grid for better readability
+_ = ax.set_yscale('log')  # Optional: If 'views' has a large range, a logarithmic scale can help.
 
-#corellation analysis
-h_labels = [x.replace('_', ' ').title() for x in 
-            list(df.select_dtypes(include=['number', 'bool']).columns.values)]
+# Correlation analysis
+h_labels = [x.replace('_', ' ').title() for x in list(df.select_dtypes(include=['number', 'bool']).columns.values)]
 
 fig, ax = plt.subplots(figsize=(10,6))
 _ = sns.heatmap(df.corr(), annot=True, xticklabels=h_labels, yticklabels=h_labels, cmap=sns.cubehelix_palette(as_cmap=True), ax=ax)
+_ = ax.set_title("Correlation Matrix of Numeric/Boolean Features", fontsize=16)
 
-
+# WordCloud of video titles
 title_words = list(df["title"].apply(lambda x: x.split()))
 title_words = [x for y in title_words for x in y]
-wc = wordcloud.WordCloud(width=1200, height=500, 
+
+# Filter out common stopwords like "the", "a", "and" etc.
+wc = wordcloud.WordCloud(width=1200, height=500, stopwords=wordcloud.STOPWORDS,
                          collocations=False, background_color="white", 
                          colormap="tab20b").generate(" ".join(title_words))
 plt.figure(figsize=(15,10))
