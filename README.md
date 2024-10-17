@@ -1,5 +1,5 @@
-# fluffy-disco
-**Trending video analysis using python**
+# Trending video analysis using python 
+**fluffy-disco**
 
 Using data from Kaggle -https://shorturl.at/MywqO- for correlation analysis of trending YouTube videos. The dataset consists of 40,000 video data, and year-long data. 
 
